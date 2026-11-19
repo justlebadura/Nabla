@@ -547,7 +547,7 @@
     renderAI();
     apply();
     document.addEventListener('click', e => {
-      if (!settings.contains(e.target) && e.target.id !== 'gear') settings.classList.remove('open');
+      if (!settings.contains(e.target) && !document.getElementById('gear').contains(e.target)) settings.classList.remove('open');
     });
   </script>
 </body>
