@@ -1,0 +1,8 @@
+/* Nabla Mono: fuerza la fuente configurada, pero NUNCA pisamos
+   las fuentes de iconos/emojis (Material, Font Awesome, gg icons, emoji, svg) */
+*:not([class*="icon"]):not([class*="Icon"]):not([class*="ICON"]):not([class*="fa-"]):not([class*="material"]):not([class*="Material"]):not([class*="symbol"]):not([class*="Symbol"]):not([class*="glyph"]):not([class*="Glyph"]):not(i):not(svg):not(svg *):not(code):not(pre):not(kbd):not(samp):not([class*="emoji"]):not([class*="Emoji"]) {
+  font-family: var(--nf, "JetBrains Mono", "Noto Sans Mono", monospace), "Noto Color Emoji" !important;
+}
+code, pre, kbd, samp, [class*="mono"] {
+  font-family: var(--nf, "JetBrains Mono", "Noto Sans Mono", monospace), "Noto Color Emoji" !important;
+}

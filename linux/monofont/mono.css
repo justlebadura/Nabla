@@ -1,0 +1,12 @@
+/* Nabla Mono: fondo de arranque + animacion de carga TUI en todas las paginas */
+:root { --nf: "JetBrains Mono", "Noto Sans Mono", monospace; }
+html { color-scheme: dark !important; }
+@keyframes nabla-boot {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+body {
+  animation: nabla-boot .55s cubic-bezier(.2,.7,.3,1) .1s both !important;
+}
+/* los sitios que la recargan en caliente (SPA) no repiten la animacion */
+body.nabla-booted { animation: none !important; }

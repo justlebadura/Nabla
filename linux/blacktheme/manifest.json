@@ -1,0 +1,24 @@
+{
+  "manifest_version": 2,
+  "name": "Nabla Black",
+  "version": "1.0",
+  "description": "Tema negro puro para Nabla",
+  "theme": {
+    "colors": {
+      "frame": [0, 0, 0],
+      "frame_inactive": [0, 0, 0],
+      "toolbar": [5, 5, 5],
+      "tab_text": [230, 230, 230],
+      "tab_background": [0, 0, 0],
+      "bookmark_text": [190, 190, 190],
+      "bookmark_background": [0, 0, 0],
+      "ntp_background": [0, 0, 0],
+      "ntp_text": [230, 230, 230],
+      "omnibox_background": [8, 8, 8],
+      "omnibox_text": [230, 230, 230],
+      "button_background": [10, 10, 10]
+    },
+    "tints": { "buttons": [-1, -1, -1] },
+    "properties": { "ntp_background_alignment": "bottom" }
+  }
+}

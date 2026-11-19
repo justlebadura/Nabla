@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Nabla Mono",
+  "version": "1.3",
+  "description": "Fuente monoespaciada configurable + estetica TUI en todas las paginas",
+  "permissions": ["storage"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "css": ["mono.css"],
+      "js": ["mono.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "css": ["yt.css"],
+      "js": ["yt.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["*://*.duckduckgo.com/*"],
+      "css": ["ddg.css"],
+      "js": ["ddg.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    { "resources": ["font.css"], "matches": ["<all_urls>"] }
+  ]
+}

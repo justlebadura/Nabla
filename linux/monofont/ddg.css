@@ -1,0 +1,294 @@
+/* Nabla TUI — resultados DuckDuckGo en modo terminal oscuro */
+
+/* base oscura */
+html, body, [data-testid="results"], #links_wrapper, #page_shell, .serp__results,
+.site-wrapper, .region-region, section {
+  background: #000 !important;
+  color: #d8d8d8 !important;
+  font-family: var(--nf, "JetBrains Mono"), monospace !important;
+}
+
+/* cabecera / navegacion */
+#header, .header, #header_wrapper, .header__search-wrap,
+[data-testid="header"], nav, #search_form, #search_wrapper {
+  background: #000 !important;
+  border-color: #222 !important;
+}
+#searchbox_input, #search_form_input, .searchbox .input, input[type="text"] {
+  background: #0a0a0a !important;
+  color: #e8e8e8 !important;
+  border: 1px solid #333 !important;
+  border-radius: 999px !important;
+  font-family: var(--nf, "JetBrains Mono"), monospace !important;
+}
+#searchbox_input::placeholder { color: #555 !important; }
+
+/* resultados */
+[data-testid="result"], .result, article[data-testid] {
+  background: #000 !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  margin: 4px 0 !important;
+  transition: border-color .25s ease, background .25s ease !important;
+}
+[data-testid="result"]:hover, .result:hover {
+  background: #0d0d0d !important;
+  border-color: #2a2a2a !important;
+}
+
+@keyframes nabla-rise {
+  /* vidrio: aparece desenfocado y el blur se disipa al materializarse */
+  from { opacity: 0; transform: translateY(14px); filter: blur(12px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+/* titulos y urls */
+h2 a, [data-testid="result-title"], .result__a {
+  color: #e8e8e8 !important;
+  font-family: var(--nf, "JetBrains Mono"), monospace !important;
+  transition: color .2s ease !important;
+}
+h2 a:hover { color: var(--g, #7ee787) !important; }
+[data-testid="result-extract"], .result__snippet, p {
+  color: #9a9a9a !important;
+  font-family: var(--nf, "JetBrains Mono"), monospace !important;
+}
+[data-testid="result-url"], .result__url, cite, span[aria-label*="url"] {
+  color: #6e7681 !important;
+  font-family: var(--nf, "JetBrains Mono"), monospace !important;
+}
+
+/* sidebar y widgets */
+[data-testid="about"], [data-testid="sidebar"], .module, aside,
+#vertical_results, .related-searches, section[data-area="mainline__top"] div {
+  background: #000 !important;
+  color: #9a9a9a !important;
+  font-family: var(--nf, "JetBrains Mono"), monospace !important;
+}
+
+/* paginacion y botones */
+button, .btn, [role="button"], a[data-testid="result-extras-url-link"] {
+  font-family: var(--nf, "JetBrains Mono"), monospace !important;
+}
+button:hover { background: #1a1a1a !important; }
+
+/* imagenes */
+img { opacity: .92; transition: opacity .3s ease, filter .3s ease; }
+img:hover { opacity: 1; }
+
+/* ====== eliminar identidad/branding de DuckDuckGo ====== */
+
+/* logos y tagline */
+#duck_logo, .logo_homepage, .logo, .header__logo, [data-testid="logo"],
+img[alt*="Duck"], svg.logo, .tagline, .msg-spacer--atb, .header__cta,
+[data-testid="header-logo"], a.header__logoWrap,
+.site-wrapper--homepage .logo_wrap, .welcome__wrapper {
+  display: none !important;
+}
+
+/* barra superior: dejarla vacia y sin slogan */
+.header__right, .feedback-btn, [data-testid="share-feedback"],
+.sharing__buttons, .duckbar .dropdown, #dropdown-official, .badge-link,
+.cb-badge, [class*="feedback"], [data-testid="feedback"] {
+  display: none !important;
+}
+
+/* tarjetas de IA / Search Assist / promos */
+[data-testid="search_assist"], .module--carousel, .ia-module--assistant,
+[data-testid="about"], .module__footer, .feedback-prompt,
+.zonebar, .adv-message, .serp__top-right, .stx-banner,
+section[data-area="knowledge_panel"] {
+  display: none !important;
+}
+
+/* "Ask Duck.ai" y botones flotantes */
+[data-testid="duckai"], .js-duckbar-chat, #duck_ai_button,
+[class*="duckai"], [aria-label*="Duck.ai"], .float-button {
+  display: none !important;
+}
+
+/* anuncios y "sponsored" */
+[data-testid="ad"], .result--ad, .ads, .result-sponsored,
+[data-testid="sponsored"], .label--sponsored {
+  display: none !important;
+}
+
+/* pie de pagina y promos */
+.footer, #footer_homepage, .footer__content, .homepage-cta,
+[data-testid="footer"], .serp__bottom-links .feedback {
+  display: none !important;
+}
+
+/* omnibox oculto: solo pill propia; la cabecera queda limpia */
+#searchbox_mobile, .searchbox--mobile {
+  display: none !important;
+}
+
+/* scrollbar terminal */
+::-webkit-scrollbar { width: 10px; background: #000; }
+::-webkit-scrollbar-thumb { background: #222; border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: #333; }
+
+/* color-scheme dark en CSS: refuerza la desactivacion de Force Dark */
+:root { color-scheme: dark !important; }
+
+/* ====== tabs "all - images - ..." como pill blanca con notch flotante ====== */
+/* DDG usa <ul> con clases ofuscadas que contiene los li de All/Images/Videos/News/Maps */
+ul[class*="XvPRmQVeIoCP5lQhICTv"],
+ul[class*="XvPRmQVeIoCP5lQhICTv"] + *:not(.nabla-notch),
+.search-tabs, [data-testid="search_tabs"], .nav-tabs,
+#header .tabs, .vertical_tabs {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 2px !important;
+  padding: 4px !important;
+  border-radius: 999px !important;
+  /* vidrio translucido: se ve el fondo desenfocado detras */
+  background: rgba(255,255,255,.45) !important;
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid rgba(255,255,255,.5) !important;
+  box-shadow: 0 4px 22px rgba(255,255,255,.07), inset 0 1px 0 rgba(255,255,255,.6);
+  position: relative !important;
+  z-index: 1 !important;
+  margin: 0 0 30px !important;
+  min-height: 44px !important;
+  width: max-content !important;
+  font-family: var(--nf, "JetBrains Mono"), monospace !important;
+  animation: tabs-in .5s cubic-bezier(.2,.7,.3,1) both;
+}
+.search-tabs a, [data-testid="search_tabs"] a, .nav-tabs a,
+#header .tabs a, .vertical_tabs a,
+ul[class*="XvPRmQVeIoCP5lQhICTv"] a {
+  position: relative;
+  z-index: 1;
+  color: #000 !important;
+  background: transparent !important;
+  border-radius: 999px !important;
+  padding: 10px 18px !important;
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+  transition: color .3s ease, transform .4s cubic-bezier(.34,1.56,.64,1) !important;
+}
+/* deformacion al pasar el mouse y al presionar */
+ul[class*="XvPRmQVeIoCP5lQhICTv"] a:hover { background: transparent !important; transform: translateY(-2px) scale(1.08, 1.16); }
+ul[class*="XvPRmQVeIoCP5lQhICTv"] a:active { transform: scale(1.02, .86); }
+ul[class*="XvPRmQVeIoCP5lQhICTv"] a.lit { color: #fff !important; }
+/* SIN efectos ni franja: fuera sombras, glows, subrayados y pseudoelementos de DDG en la pill */
+ul[class*="XvPRmQVeIoCP5lQhICTv"] a {
+  box-shadow: none !important;
+  text-decoration: none !important;
+  border-bottom: none !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  text-shadow: none !important;
+}
+ul[class*="XvPRmQVeIoCP5lQhICTv"] a::before,
+ul[class*="XvPRmQVeIoCP5lQhICTv"] a::after {
+  display: none !important;
+}
+ul[class*="XvPRmQVeIoCP5lQhICTv"] {
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+/* los degradados fade de DDG (nav::before, ul::before/::after) fuera */
+nav::before,
+nav::after,
+ul[class*="XvPRmQVeIoCP5lQhICTv"]::before,
+ul[class*="XvPRmQVeIoCP5lQhICTv"]::after {
+  display: none !important;
+}
+.nabla-notch {
+  box-shadow: none !important;
+}
+/* notch flotante que persigue al mouse */
+.nabla-notch {
+  position: absolute !important;
+  border-radius: 999px !important;
+  background: #000 !important;
+  pointer-events: none !important;
+  will-change: left, top, width, height;
+  transition: left .34s cubic-bezier(.34,1.56,.64,1), top .34s cubic-bezier(.34,1.56,.64,1), width .34s cubic-bezier(.34,1.56,.64,1), height .34s cubic-bezier(.34,1.56,.64,1) !important;
+  z-index: 0;
+  opacity: 0; /* el JS la enciende en cuanto la posiciona (nunca se ve troceada) */
+  box-shadow: 0 3px 12px rgba(0,0,0,.45) !important;
+  margin: 0 !important;
+  flex: none !important;
+}
+/* la pill se ajusta a su contenido; el gear queda a su lado, sin hueco vacio */
+nav:has(> ul[class*="XvPRmQVeIoCP5lQhICTv"]) {
+  width: max-content !important;
+  max-width: none !important;
+  display: flex !important;
+  /* padding (no margin) para que no colapse a traves de los ancestros y tape la barra de busqueda */
+  padding-top: 22px !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+/* la pill NUNCA carga troceada: invisible+blur hasta que React termina de montar
+   las tabs, y entonces entra entera con blur-reveal (el delay .3s cubre el hidratado) */
+@keyframes nabla-pill-in {
+  from { opacity: 0; filter: blur(14px); transform: translateY(-6px) scale(.98); }
+  to   { opacity: 1; filter: blur(0);   transform: none; }
+}
+nav:has(> ul[class*="XvPRmQVeIoCP5lQhICTv"]) {
+  animation: nabla-pill-in .5s cubic-bezier(.2,.7,.3,1) .3s both !important;
+}
+/* header de DDG: altura automatica para que la pill crecida no desborde */
+div.header:has(nav ul[class*="XvPRmQVeIoCP5lQhICTv"]) {
+  height: auto !important;
+  min-height: 120px !important;
+  padding-bottom: 14px !important;
+}
+/* filtra fila (Private / Colombia / Safe search) mas separada de la pill */
+.qrc3T8W2PIYg9L63oA06 { margin-top: 26px !important; }
+/* gear de DDG (Search Settings): SOLO el icono, sin circulito ni empji */
+button:has(.dropdown--settings), .dropdown--settings button, button[aria-label*="etting"] {
+  background: transparent !important;
+  -webkit-backdrop-filter: none;
+  border: none !important;
+  box-shadow: none !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  border-radius: 50% !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #e8e8e8 !important;
+  transition: transform .35s cubic-bezier(.34,1.56,.64,1) !important;
+}
+.dropdown--settings button:hover, button:has(.dropdown--settings):hover { transform: scale(1.1) rotate(30deg); }
+.dropdown--settings button svg, button[aria-label*="etting"] svg, button:has(.dropdown--settings) svg { width: 18px !important; height: 18px !important; }
+/* quitar la lupita del link All */
+ul[class*="XvPRmQVeIoCP5lQhICTv"] a svg { display: none !important; }
+/* notch: pestaña activa = pildora negra flotante */
+/* la pestaña activa solo cambia de color; el notch negro lo dibuja el JS */
+ul[class*="XvPRmQVeIoCP5lQhICTv"] a.SnptgjT2zdOhGYfNng6g,
+.search-tabs a[data-testid="search-tab-active"], .search-tabs .is-active,
+.search-tabs .tabs__item--active, .search-tabs [aria-current="page"],
+[data-testid="search_tabs"] [aria-current="page"], .nav-tabs .is-active {
+  background: transparent !important;
+  color: #fff !important;
+}
+@keyframes tabs-in {
+  from { opacity: 0; transform: translateY(-8px) scale(.97); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ====== la pagina puede expandirse hacia la derecha ====== */
+section[data-area="mainline"] {
+  max-width: none !important;
+  flex: 1 1 auto !important;
+}
+#links_wrapper, #react-layout, main, .content-wrap, [data-testid="results"],
+.region-region, #page_shell, .site-wrapper.js-site-wrapper, #results_column {
+  max-width: none !important;
+}
+#links_wrapper, .content-wrap, #results_column {
+  width: calc(100% - 40px) !important;
+  margin-left: 20px !important;
+  padding-right: 0 !important;
+}

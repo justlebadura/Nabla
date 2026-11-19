@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Name=Nabla (ligero)
+GenericName=Code-first Web Browser
+Comment=Navegador Nabla en modo ligero (sin animaciones)
+Exec=/usr/bin/thorium-browser --force-dark-mode --force-prefers-reduced-motion --disable-smooth-scrolling --enable-low-end-device-mode --load-extension=/home/lebadura/.config/nabla/monofont,/home/lebadura/.config/nabla/blacktheme %U
+StartupNotify=true
+StartupWMClass=org.chromium.Chromium
+Terminal=false
+Icon=nabla
+Type=Application
+Categories=Network;WebBrowser;

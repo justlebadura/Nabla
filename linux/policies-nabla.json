@@ -1,0 +1,10 @@
+{
+  "DefaultSearchProviderEnabled": true,
+  "DefaultSearchProviderName": "DuckDuckGo",
+  "DefaultSearchProviderKeyword": "ddg",
+  "DefaultSearchProviderSearchURL": "https://duckduckgo.com/?q={searchTerms}",
+  "DefaultSearchProviderSuggestURL": "https://duckduckgo.com/ac/?q={searchTerms}&type=list",
+  "NewTabPageLocation": "file:///home/lebadura/.config/nabla/newtab.html",
+  "RestoreOnStartup": 4,
+  "RestoreOnStartupURLs": ["file:///home/lebadura/.config/nabla/newtab.html"]
+}

@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>New tab</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    background: #000;
+    font-family: "JetBrains Mono", monospace;
+    color: #e8e8e8;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .wrap { width: min(640px, 86vw); display: flex; flex-direction: column; gap: 22px; }
+
+  /* ====== pill de busqueda liquid-glass ====== */
+  .glass {
+    position: relative;
+    z-index: 2; /* el backdrop-filter crea stacking context: sin esto favs (hermano posterior) pinta encima del ai-menu/ac */
+    display: flex; align-items: center; gap: 10px;
+    width: 100%;
+    padding: 15px 24px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: linear-gradient(135deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+    backdrop-filter: blur(14px) saturate(1.2);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    cursor: text;
+    transition: border-color .35s ease, box-shadow .35s ease, transform .35s cubic-bezier(.2,.7,.3,1);
+    animation: glass-in .7s cubic-bezier(.2,.7,.3,1) both;
+  }
+  .glass:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.24); }
+  .glass:focus-within {
+    border-color: color-mix(in srgb, var(--g, #ffffff) 40%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--g, #ffffff) 18%, transparent), 0 8px 40px color-mix(in srgb, var(--g, #ffffff) 8%, transparent);
+    transform: translateY(-3px);
+  }
+  /* brillo liquido que recorre la pill */
+  .glass::before {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: 999px;
+    background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.09) 48%, transparent 62%);
+    transform: translateX(-120%);
+    animation: sheen 6s ease-in-out 2s infinite;
+    pointer-events: none;
+  }
+  /* ====== gear de configuracion: pelado, pegado a la esquina ====== */
+  .gear {
+    position: fixed; right: 10px; bottom: 8px;
+    background: none; border: none; outline: none;
+    color: #555; font-size: 20px;
+    cursor: pointer;
+    animation: gear-in .5s cubic-bezier(.2,.7,.3,1) .3s both;
+    transition: transform .3s cubic-bezier(.2,.7,.3,1), color .3s ease;
+    z-index: 20;
+    font-family: inherit;
+    padding: 2px;
+  }
+  .gear:hover { transform: rotate(90deg); color: var(--g, #ffffff); }
+  @keyframes gear-in { from { opacity: 0; transform: translateY(20px) rotate(-120deg); } to { opacity: 1; transform: none; } }
+
+  .settings {
+    position: fixed; right: 18px; bottom: 70px;
+    width: 280px;
+    padding: 16px 18px;
+    border-radius: 22px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(10,10,10,.72);
+    backdrop-filter: blur(18px) saturate(1.2);
+    -webkit-backdrop-filter: blur(18px) saturate(1.2);
+    display: none;
+    flex-direction: column; gap: 12px;
+    z-index: 20;
+  }
+  .settings.open { display: flex; animation: glass-drop .3s cubic-bezier(.2,.7,.3,1) both; }
+  .settings h3 { font-size: 12px; color: #888; font-weight: normal; letter-spacing: 1px; }
+  .settings label { font-size: 12px; color: #bdbdbd; display: flex; justify-content: space-between; }
+  .settings input[type="range"] {
+    width: 100%;
+    accent-color: var(--g, #ffffff);
+    background: transparent;
+  }
+  /* ====== modo ligero ====== */
+  .light-row { align-items: center; cursor: pointer; }
+  .light-row input { accent-color: var(--g, #ffffff); }
+  .light-note { font-size: 10px; color: #777; margin: 0; line-height: 1.5; }
+  body.light .glass, body.light .settings, body.light .fav-form, body.light .ac {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(16,16,16,.92) !important;
+  }
+  body.light .glass::before { display: none; }
+  body.light * { animation: none !important; transition: none !important; box-shadow: none !important; }
+  .cursor {
+    display: inline-block; width: 9px; height: 16px;
+    background: var(--g, #ffffff); margin-left: 2px;
+    vertical-align: text-bottom;
+    animation: blink 1s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  .sig { color: #e8e8e8; font-size: 15px; white-space: nowrap; }
+  .glass input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: #e8e8e8; font-family: inherit; font-size: 15px; position: relative; z-index: 1;
+  }
+  .glass input::placeholder { color: #666; }
+
+  /* ====== modo IA: estrella animada + flecha de modelo ====== */
+  .aibtn {
+    background: none; border: none; outline: none;
+    color: #555; font-family: inherit;
+    cursor: pointer; padding: 2px 4px;
+    position: relative; z-index: 1;
+    transition: color .25s ease;
+  }
+  #aiStar { font-size: 17px; animation: twinkle 2.6s ease-in-out infinite; }
+  #aiStar:hover { color: #ccc; }
+  #aiStar.on {
+    color: var(--g, #ffffff);
+    text-shadow: 0 0 14px color-mix(in srgb, var(--g, #ffffff) 65%, transparent);
+  }
+  #aiStar.prism {
+    background: conic-gradient(#ff5f6d, #ffc371, #47e891, #4facfe, #b06ab3, #ff5f6d);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+    text-shadow: none;
+    filter: drop-shadow(0 0 9px rgba(180, 140, 255, .35));
+    animation: twinkle 2.6s ease-in-out infinite, prism-hue 4s linear infinite;
+  }
+  @keyframes prism-hue {
+    from { filter: drop-shadow(0 0 9px rgba(255, 120, 120, .35)) hue-rotate(0deg); }
+    to { filter: drop-shadow(0 0 9px rgba(255, 120, 120, .35)) hue-rotate(360deg); }
+  }
+  @keyframes twinkle {
+    0%, 100% { transform: scale(1) rotate(0deg); opacity: .7; }
+    50% { transform: scale(1.28) rotate(90deg); opacity: 1; }
+  }
+  .ai-menu {
+    position: absolute; top: calc(100% + 6px); right: 10px; z-index: 60;
+    min-width: 150px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(10,10,10,.72);
+    backdrop-filter: blur(18px) saturate(1.2);
+    -webkit-backdrop-filter: blur(18px) saturate(1.2);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 70;
+  }
+  .ai-menu.open { display: flex; animation: glass-drop .25s cubic-bezier(.2,.7,.3,1) both; }
+  .ai-item {
+    padding: 9px 18px;
+    font-size: 13px; color: #bdbdbd;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+  }
+  .ai-item:hover, .ai-item.sel { background: color-mix(in srgb, var(--g, #ffffff) 8%, transparent); color: var(--g, #ffffff); }
+  body.light .ai-menu { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background: rgba(16,16,16,.92) !important; }
+
+  /* ====== dropdown autocompletado ====== */
+  .ac {
+    position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 60;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(10,10,10,.72);
+    backdrop-filter: blur(18px) saturate(1.2);
+    -webkit-backdrop-filter: blur(18px) saturate(1.2);
+    overflow: hidden;
+    display: none;
+    z-index: 70;
+  }
+  .ac.open { display: block; animation: glass-drop .25s cubic-bezier(.2,.7,.3,1) both; }
+  .ac-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 22px;
+    font-size: 14px; color: #bdbdbd;
+    cursor: pointer;
+    opacity: 0;
+    animation: ac-rise .25s cubic-bezier(.2,.7,.3,1) forwards;
+    transition: background .15s ease, color .15s ease;
+  }
+  .ac-item:hover, .ac-item.sel { background: color-mix(in srgb, var(--g, #ffffff) 8%, transparent); color: var(--g, #ffffff); }
+  .ac-item .dot { color: #555; }
+
+  /* ====== favoritos ====== */
+  .favs {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    animation: glass-in .7s cubic-bezier(.2,.7,.3,1) .15s both;
+  }
+  .fav {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.1);
+    background: linear-gradient(135deg, rgba(255,255,255,.05), rgba(255,255,255,.015));
+    font-size: 13px; color: #bdbdbd;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform .25s cubic-bezier(.2,.7,.3,1), border-color .25s ease, background .25s ease, box-shadow .25s ease;
+    animation: glass-in .4s cubic-bezier(.2,.7,.3,1) both;
+  }
+  .fav:hover {
+    transform: translateY(-3px) scale(1.03);
+    border-color: color-mix(in srgb, var(--g, #ffffff) 35%, transparent);
+    background: color-mix(in srgb, var(--g, #ffffff) 6%, transparent);
+    box-shadow: 0 6px 24px color-mix(in srgb, var(--g, #ffffff) 8%, transparent);
+  }
+  .fav .favic {
+    width: 16px; height: 16px; border-radius: 4px; flex: none;
+    background: rgba(255,255,255,.06);
+  }
+  .fav .x {
+    color: #555; font-size: 12px; margin-left: 2px;
+    transition: color .2s ease, transform .2s ease;
+  }
+  .fav .x:hover { color: #f77; transform: scale(1.3); }
+  .fav-add {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px dashed rgba(255,255,255,.22);
+    color: #888;
+    font-size: 13px;
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform .25s cubic-bezier(.2,.7,.3,1), border-color .25s ease, color .25s ease;
+  }
+  .fav-add:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--g, #ffffff) 40%, transparent); color: var(--g, #ffffff); }
+
+  /* formulario para anadir favorito */
+  .fav-form {
+    display: none; flex-direction: column; gap: 8px;
+    padding: 14px 18px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.04);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    animation: glass-drop .3s cubic-bezier(.2,.7,.3,1) both;
+  }
+  .fav-form.open { display: flex; }
+  .fav-form input {
+    background: transparent; border: none; outline: none;
+    border-bottom: 1px solid rgba(255,255,255,.14);
+    color: #e8e8e8; font-family: inherit; font-size: 14px; padding: 6px 2px;
+  }
+  .fav-form input:focus { border-bottom-color: rgba(126,231,135,.4); }
+  .fav-form button {
+    align-self: flex-end;
+    background: transparent; border: 1px solid color-mix(in srgb, var(--g, #ffffff) 35%, transparent);
+    border-radius: 999px; color: var(--g, #ffffff); font-family: inherit; font-size: 13px;
+    padding: 6px 18px; cursor: pointer;
+    transition: background .2s ease, box-shadow .2s ease;
+  }
+  .fav-form button:hover { background: color-mix(in srgb, var(--g, #ffffff) 10%, transparent); box-shadow: 0 0 18px color-mix(in srgb, var(--g, #ffffff) 12%, transparent); }
+
+  @keyframes glass-in { from { opacity: 0; transform: translateY(16px) scale(.97); } to { opacity: 1; transform: none; } }
+  @keyframes glass-drop { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+  @keyframes ac-rise { to { opacity: 1; } }
+  @keyframes sheen {
+    0% { transform: translateX(-120%); }
+    55%, 100% { transform: translateX(120%); }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <form class="glass" id="f" action="https://duckduckgo.com/" method="get">
+      <span class="sig" id="sig">nabla~$</span>
+      <input id="q" name="q" type="text" placeholder="search" autofocus autocomplete="off" spellcheck="false">
+      <button class="aibtn" id="aiStar" type="button" title="modo IA">✦</button>
+      <div class="ai-menu" id="aiMenu"></div>
+      <div class="ac" id="ac"></div>
+    </form>
+    <div class="favs" id="favs"></div>
+    <div class="fav-form" id="ff">
+      <input id="ffn" type="text" placeholder="nombre">
+      <input id="ffu" type="text" placeholder="url">
+      <button id="ffok" type="button">add</button>
+    </div>
+  </div>
+  <div class="gear" id="gear" title="configuración"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+  <div class="settings" id="settings">
+    <h3>nabla://settings</h3>
+    <label>brillo <span id="vbr">100%</span></label>
+    <input id="br" type="range" min="30" max="130" value="100">
+    <label>contraste <span id="vct">100%</span></label>
+    <input id="ct" type="range" min="50" max="150" value="100">
+    <label>glow <span id="vgl">on</span></label>
+    <input id="gl" type="range" min="0" max="100" value="100">
+    <label>color del glow <span id="vgc" style="color:var(--g,#ffffff)">#ffffff</span></label>
+    <input id="gc" type="color" value="#ffffff">
+    <label class="light-row">modo ligero
+      <input id="lg" type="checkbox">
+    </label>
+    <label class="light-row">barra IA
+      <input id="aiOn" type="checkbox">
+    </label>
+    <label>modelo IA
+      <select id="aimSel" style="background:transparent;border:none;outline:none;color:var(--g,#ffffff);font-family:inherit;font-size:12px;cursor:pointer"></select>
+    </label>
+    <label>forzar fuente
+      <select id="nfSel" style="background:transparent;border:none;outline:none;color:var(--g,#ffffff);font-family:inherit;font-size:12px;cursor:pointer"></select>
+    </label>
+    <p class="light-note" id="lightNote" hidden>reinicia con "Nabla (ligero)" en el menú de apps para aplicarlo a todo el navegador</p>
+  </div>
+  <script>
+    // anclar gear y settings al html (viewport real): el filter del body los desplazaria
+    document.documentElement.appendChild(document.getElementById('gear'));
+    document.documentElement.appendChild(document.getElementById('settings'));
+    const q = document.getElementById('q');
+    const ac = document.getElementById('ac');
+    const f = document.getElementById('f');
+
+    // ====== busqueda ======
+    f.addEventListener('submit', e => {
+      e.preventDefault();
+      const t = q.value.trim();
+      if (!t) return;
+      location.href = cfg.ai
+        ? MODELS[cfg.aim][1] + encodeURIComponent(t)
+        : 'https://duckduckgo.com/?q=' + encodeURIComponent(t);
+    });
+
+    // ====== autocompletado dinamico ======
+    let sel = -1, items = [];
+    async function suggest(text) {
+      const t = text.trim();
+      if (!t) { ac.classList.remove('open'); return; }
+      try {
+        const r = await fetch('https://duckduckgo.com/ac/?q=' + encodeURIComponent(t) + '&type=list');
+        const data = await r.json();
+        items = (data[1] || []).slice(0, 8);
+      } catch { items = []; }
+      sel = -1;
+      if (!items.length) { ac.classList.remove('open'); return; }
+      ac.innerHTML = '';
+      items.forEach((s, i) => {
+        const d = document.createElement('div');
+        d.className = 'ac-item';
+        d.style.animationDelay = (i * 35) + 'ms';
+        d.innerHTML = '<span class="dot">›</span>' + s;
+        d.addEventListener('mousedown', e => { e.preventDefault(); go(s); });
+        ac.appendChild(d);
+      });
+      ac.classList.add('open');
+    }
+    function go(s) { location.href = 'https://duckduckgo.com/?q=' + encodeURIComponent(s); }
+    let deb;
+    q.addEventListener('input', () => {
+      clearTimeout(deb);
+      deb = setTimeout(() => suggest(q.value), 120);
+    });
+    q.addEventListener('keydown', e => {
+      const els = [...ac.querySelectorAll('.ac-item')];
+      if (!els.length) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); sel = (sel + 1) % els.length; }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); sel = (sel - 1 + els.length) % els.length; }
+      else if (e.key === 'Escape') { ac.classList.remove('open'); return; }
+      else return;
+      els.forEach((el, i) => el.classList.toggle('sel', i === sel));
+      q.value = items[sel];
+    });
+    document.addEventListener('click', e => { if (!f.contains(e.target)) ac.classList.remove('open'); });
+
+    // ====== favoritos ======
+    let favs = [];
+    try { favs = JSON.parse(localStorage.getItem('nabla-favs') || '[]'); } catch { favs = []; }
+    const favsEl = document.getElementById('favs');
+    const ff = document.getElementById('ff');
+    const ffn = document.getElementById('ffn'), ffu = document.getElementById('ffu');
+
+    function save() { localStorage.setItem('nabla-favs', JSON.stringify(favs)); }
+    function host(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return u; } }
+
+    function render() {
+      favsEl.innerHTML = '';
+      favs.forEach((fv, i) => {
+        const a = document.createElement('a');
+        a.className = 'fav';
+        a.style.animationDelay = (i * 40) + 'ms';
+        a.href = fv.url;
+        const ic = document.createElement('img');
+        ic.className = 'favic';
+        ic.src = 'https://icons.duckduckgo.com/ip3/' + host(fv.url) + '.ico';
+        ic.alt = '';
+        ic.addEventListener('error', () => ic.remove());
+        a.appendChild(ic);
+        const t = document.createElement('span');
+        t.textContent = fv.name;
+        a.appendChild(t);
+        const x = document.createElement('span');
+        x.className = 'x'; x.textContent = '×';
+        x.title = 'quitar';
+        x.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); favs.splice(i, 1); save(); render(); });
+        a.appendChild(x);
+        favsEl.appendChild(a);
+      });
+      const add = document.createElement('button');
+      add.className = 'fav-add';
+      add.type = 'button';
+      add.textContent = '+ add';
+      add.addEventListener('click', () => { ff.classList.toggle('open'); if (ff.classList.contains('open')) ffn.focus(); });
+      favsEl.appendChild(add);
+    }
+    render();
+
+    document.getElementById('ffok').addEventListener('click', () => {
+      let url = ffu.value.trim();
+      if (!url) return;
+      if (!/^https?:\/\//.test(url)) url = 'https://' + url;
+      const name = ffn.value.trim() || host(url);
+      favs.push({ name, url });
+      save(); render();
+      ffn.value = ffu.value = '';
+      ff.classList.remove('open');
+    });
+    ff.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('ffok').click(); } });
+
+    // ====== typewriter en el placeholder ======
+    // (en modo ligero no corre: placeholder estatico)
+    const light0 = JSON.parse(localStorage.getItem('nabla-cfg') || '{}').light;
+    const phrases = ['search', 'grep the web', 'query', 'consult the oracle'];
+    let pi = 0, ci = 0, deleting = false;
+    function type() {
+      const word = phrases[pi];
+      q.placeholder = word.slice(0, ci) + (ci < word.length || deleting ? '▏' : '');
+      if (!deleting) {
+        if (ci < word.length) { ci++; setTimeout(type, 90); }
+        else { deleting = true; setTimeout(type, 1600); }
+      } else {
+        if (ci > 0) { ci--; setTimeout(type, 40); }
+        else { deleting = false; pi = (pi + 1) % phrases.length; setTimeout(type, 400); }
+      }
+    }
+    if (!light0) type(); else q.placeholder = 'search';
+
+    // ====== configuracion ======
+    const settings = document.getElementById('settings');
+    document.getElementById('gear').addEventListener('click', () => settings.classList.toggle('open'));
+    const br = document.getElementById('br'), ct = document.getElementById('ct'), gl = document.getElementById('gl'), gc = document.getElementById('gc');
+    const cfg = JSON.parse(localStorage.getItem('nabla-cfg') || '{}');
+    if (cfg.br) br.value = cfg.br; if (cfg.ct) ct.value = cfg.ct; if (cfg.gl != null) gl.value = cfg.gl; if (cfg.gc) gc.value = cfg.gc;
+    const apply = () => {
+      cfg.br = br.value; cfg.ct = ct.value; cfg.gl = gl.value; cfg.gc = gc.value;
+      document.body.style.filter = 'brightness(' + br.value / 100 + ') contrast(' + ct.value / 100 + ')';
+      document.documentElement.style.setProperty('--g', gc.value);
+      localStorage.setItem('nabla-cfg', JSON.stringify(cfg));
+      document.getElementById('vbr').textContent = br.value + '%';
+      document.getElementById('vct').textContent = ct.value + '%';
+      document.getElementById('vgl').textContent = gl.value + '%';
+      const vc = document.getElementById('vgc');
+      vc.textContent = gc.value;
+      vc.style.color = gc.value;
+    }
+    [br, ct, gl, gc].forEach(s => s.addEventListener('input', () => {
+      apply();
+      window.postMessage({ nabla: 'cfg', nf: cfg.nf, g: cfg.g }, '*'); // glow/fuente a todas las paginas
+    }));
+    // ====== modo ligero ======
+    const lg = document.getElementById('lg');
+    const lightNote = document.getElementById('lightNote');
+    lg.checked = !!cfg.light;
+    document.body.classList.toggle('light', !!cfg.light);
+    lg.addEventListener('change', () => {
+      cfg.light = lg.checked;
+      document.body.classList.toggle('light', lg.checked);
+      lightNote.hidden = !lg.checked;
+      localStorage.setItem('nabla-cfg', JSON.stringify(cfg));
+    });
+    if (cfg.light) lightNote.hidden = false;
+    // ====== modo IA: estrella + flecha de modelo ======
+    const MODELS = {
+      claude: ['claude', 'https://claude.ai/new?q='],
+      chatgpt: ['chatgpt', 'https://chatgpt.com/?q='],
+      grok: ['grok', 'https://grok.com/?q='],
+      gemini: ['gemini', 'https://gemini.google.com/app?q='],
+      zai: ['Z.ai', 'https://chat.z.ai/?q=']
+    };
+    cfg.ai = cfg.ai === true;               // default off
+    cfg.aim = MODELS[cfg.aim] ? cfg.aim : 'claude';
+    const sig = document.getElementById('sig');
+    const aiStar = document.getElementById('aiStar');
+    const aiMenu = document.getElementById('aiMenu');
+    const aiOn = document.getElementById('aiOn');
+    const aimSel = document.getElementById('aimSel');
+    let prism = false;
+    aiOn.addEventListener('change', () => { cfg.ai = aiOn.checked; prism = cfg.ai; saveCfg(); renderAI(); });
+    aimSel.addEventListener('change', () => { cfg.aim = aimSel.value; saveCfg(); renderAI(); });
+    function saveCfg() { localStorage.setItem('nabla-cfg', JSON.stringify(cfg)); }
+    function renderAI() {
+      aiStar.classList.toggle('prism', cfg.ai);
+      sig.textContent = cfg.ai ? 'nabla~$ ai' : 'nabla~$';
+      [...aiMenu.children].forEach(el => el.classList.toggle('sel', el.dataset.k === cfg.aim));
+      aiOn.checked = cfg.ai;
+      aimSel.value = cfg.aim;
+    }
+    Object.entries(MODELS).forEach(([k, [label]]) => {
+      const d = document.createElement('div');
+      d.className = 'ai-item';
+      d.dataset.k = k;
+      d.textContent = label;
+      d.addEventListener('click', () => {
+        cfg.aim = k; saveCfg(); renderAI(); aiMenu.classList.remove('open');
+      });
+      aimSel.add(new Option(label, k));
+      aiMenu.appendChild(d);
+    });
+    // click: enciende IA en estado prisma (arcoiris); hover: menu de modelos; click de nuevo: apaga
+    aiStar.addEventListener('click', () => {
+      cfg.ai = !cfg.ai;
+      prism = cfg.ai;
+      saveCfg(); renderAI();
+    });
+    aiStar.addEventListener('mouseenter', () => { if (cfg.ai) aiMenu.classList.add('open'); });
+    aiMenu.addEventListener('mouseleave', () => aiMenu.classList.remove('open'));
+    document.addEventListener('click', e => { if (!aiMenu.contains(e.target)) aiMenu.classList.remove('open'); });
+    // ====== forzar fuente (elige o desactiva; afecta a todas las paginas via extension) ======
+    const FONTS = [
+      ['none', 'no forzar'],
+      ['"JetBrains Mono"', 'JetBrains Mono'],
+      ['"Noto Sans Mono"', 'Noto Sans Mono'],
+      ['"Source Code Pro"', 'Source Code Pro'],
+      ['"Liberation Mono"', 'Liberation Mono'],
+      ['"Adwaita Mono"', 'Adwaita Mono']
+    ];
+    const nfSel = document.getElementById('nfSel');
+    cfg.nf = cfg.nf === undefined ? '"JetBrains Mono"' : cfg.nf;
+    FONTS.forEach(([v, l]) => nfSel.add(new Option(l, v)));
+    nfSel.value = cfg.nf;
+    function setNF(v, announce) {
+      cfg.nf = v;
+      document.documentElement.style.setProperty('--nf', v === 'none' ? 'monospace' : v);
+      saveCfg();
+      // la extension (mono.js en paginas file://) puentea el valor a chrome.storage
+      if (announce) window.postMessage({ nabla: 'cfg', nf: v, g: cfg.g }, '*');
+    }
+    nfSel.addEventListener('change', () => setNF(nfSel.value, true));
+    setNF(cfg.nf, false);
+    // anunciar el glow configurado (mono.js lo aplica como --g en TODAS las paginas)
+    window.postMessage({ nabla: 'cfg', nf: cfg.nf, g: cfg.g }, '*');
+    renderAI();
+    apply();
+    document.addEventListener('click', e => {
+      if (!settings.contains(e.target) && e.target.id !== 'gear') settings.classList.remove('open');
+    });
+  </script>
+</body>
+</html>
